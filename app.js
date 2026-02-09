@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const User = require('./Models/userData')
 const mongoDB = require('./Database/FebServer')
+const bcrypt = require('bcrypt')
 app.use(express.json());
 
 app.get('/home',(req,res)=>{
@@ -10,13 +11,17 @@ app.get('/home',(req,res)=>{
 
 app.post('/signup',async (req,res)=>{
    try {
-     const {firstName,lastName,age,place,emailID} = req.body;
+     const {firstName,lastName,age,place,emailID,password} = req.body;
+
+     const passHash = await bcrypt.hash(password,10);
+
     const arr = new User ({
         firstName,
         lastName,
         age,
         place,
-        emailID
+        emailID,
+        password:passHash
     })
     await arr.save()
     res.json({
@@ -32,23 +37,18 @@ app.post('/signup',async (req,res)=>{
       })
    }
 })
-app.get('/user',async(req,res)=>{
-    try {
-        const data = await User.find()
-        res.json({
-            msg:"These are the all user Sir",
-            user:data
-        })
-    } catch (error) {
-        console.log(error);
-        
-    }
-})
+
 
 app.post('/login',async (req,res)=>{
     try {
-        const {emailID} = req.body;
+        const {emailID,password} = req.body;
            const user = await User.findOne({ emailID:emailID });
+    // res.send(password)
+           const match = await bcrypt.compare(password,user.password)
+
+        if(!match){
+            res.send('password is wrong')
+        }
 
     if (!user) {
         return res.status(404).json({
@@ -65,6 +65,51 @@ app.post('/login',async (req,res)=>{
         console.log(error)
     }
 
+})
+
+app.patch('/user/edit',async(req,res)=>{
+    try {
+        // const {emailID,password} = req.body
+        const {firstName,lastName,age,place,emailID,password} = req.body;
+        const user = await User.findOne({emailID:emailID});
+        if(!user){
+            res.send("user doesn't exist")
+        }
+        
+        const newUser = new User ({
+           firstName:firstName,
+           lastName:lastName,
+            age:age,
+            place:place
+        })
+
+        await newUser.save()
+
+        res.json({
+            msg:"edit the data and save the user",
+            data:newUser
+        })
+
+    } catch (error) {
+        
+    }
+    
+
+
+
+})
+
+app.get('/user',async(req,res)=>{
+    try {
+        const data = await User.find()
+        res.json({
+            msg:"These are the all user Sir",
+            user:data
+        })
+    } catch (error) {
+        console.log(error);
+        
+    }
 })
 
 const Port = 5000
