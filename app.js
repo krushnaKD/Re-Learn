@@ -3,7 +3,11 @@ const app = express();
 const User = require('./Models/userData')
 const mongoDB = require('./Database/FebServer')
 const bcrypt = require('bcrypt')
+const cookieParser = require("cookie-parser")
+const jwt = require('jsonwebtoken');
+
 app.use(express.json());
+app.use(cookieParser());
 
 app.get('/home',(req,res)=>{
     res.send('hee ! Welcome back Hommie!')
@@ -47,7 +51,7 @@ app.post('/login',async (req,res)=>{
            const match = await bcrypt.compare(password,user.password)
 
         if(!match){
-            res.send('password is wrong')
+            res.send('password is wrong try again')
         }
 
     if (!user) {
@@ -56,15 +60,38 @@ app.post('/login',async (req,res)=>{
             msg: "User not found"
         });
     }
+    const token = await jwt.sign({_id:user._id},"Learning@2024")
+    res.cookie("token",token);
+
       res.status(200).json({
         success: true,
-        msg: "User fetched successfully",
+        msg: "User fetched successfully Sir!",
         data: user
     });
     } catch (error) {
         console.log(error)
     }
 
+})
+
+app.get("/user/profile",async(req,res)=>{
+    try {
+      const cookies = req.cookies;
+      console.log(cookies);
+      
+         const {token} = cookies
+    //  console.log(token)
+    const decodedMessage = await jwt.verify(token,"Learning@2024")
+console.log(decodedMessage)
+    const {_id} = decodedMessage;
+    
+    const user = await User.findById(_id)
+
+     res.send(user)
+
+    } catch (error) {
+        res.send(error.message)
+    }
 })
 
 app.patch('/user/edit',async(req,res)=>{
