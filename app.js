@@ -5,6 +5,7 @@ const mongoDB = require('./Database/FebServer')
 const bcrypt = require('bcrypt')
 const cookieParser = require("cookie-parser")
 const jwt = require('jsonwebtoken');
+const {UserAuth} = require("./Middlewares/auth")
 
 app.use(express.json());
 app.use(cookieParser());
@@ -74,19 +75,9 @@ app.post('/login',async (req,res)=>{
 
 })
 
-app.get("/user/profile",async(req,res)=>{
+app.get("/user/profile",UserAuth, async(req,res)=>{
     try {
-      const cookies = req.cookies;
-      console.log(cookies);
-      
-         const {token} = cookies
-    //  console.log(token)
-    const decodedMessage = await jwt.verify(token,"Learning@2024")
-console.log(decodedMessage)
-    const {_id} = decodedMessage;
-    
-    const user = await User.findById(_id)
-
+     const user = req.user
      res.send(user)
 
     } catch (error) {
