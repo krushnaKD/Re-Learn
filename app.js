@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt')
 const cookieParser = require("cookie-parser")
 const jwt = require('jsonwebtoken');
 const {UserAuth} = require("./Middlewares/auth")
+const getJWT = require("./Models/userData")
 
 app.use(express.json());
 app.use(cookieParser());
@@ -61,7 +62,7 @@ app.post('/login',async (req,res)=>{
             msg: "User not found"
         });
     }
-    const token = await jwt.sign({_id:user._id},"Learning@2024")
+    const token = await user.getJWT()
     res.cookie("token",token);
 
       res.status(200).json({
